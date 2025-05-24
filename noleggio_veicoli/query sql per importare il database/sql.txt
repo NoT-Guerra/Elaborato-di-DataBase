@@ -1,0 +1,209 @@
+-- 1. CREA IL DATABASE
+CREATE DATABASE IF NOT EXISTS noleggio_veicoli;
+USE noleggio_veicoli;
+
+-- 2. TABELLE
+
+-- UTENTE
+CREATE TABLE utente (
+  id_utente INT AUTO_INCREMENT PRIMARY KEY,
+  nome VARCHAR(50),
+  cognome VARCHAR(50),
+  email VARCHAR(100) UNIQUE,
+  password VARCHAR(255),
+  stato_account VARCHAR(20) DEFAULT 'attivo'
+);
+
+
+-- CLIENTE
+CREATE TABLE cliente (
+  id_utente INT PRIMARY KEY,
+  FOREIGN KEY (id_utente) REFERENCES utente(id_utente)
+);
+
+-- PROPRIETARIO
+CREATE TABLE proprietario (
+  id_utente INT PRIMARY KEY,
+  FOREIGN KEY (id_utente) REFERENCES utente(id_utente)
+);
+
+-- INDIRIZZO
+CREATE TABLE indirizzo (
+  id_indirizzo INT AUTO_INCREMENT PRIMARY KEY,
+  via VARCHAR(100),
+  cap VARCHAR(10),
+  città VARCHAR(50),
+  provincia VARCHAR(50),
+  nazione VARCHAR(50)
+);
+
+-- RELAZIONE CLIENTE - INDIRIZZO (possiede)
+CREATE TABLE cliente_indirizzo (
+  id_cliente INT,
+  id_indirizzo INT,
+  PRIMARY KEY (id_cliente, id_indirizzo),
+  FOREIGN KEY (id_cliente) REFERENCES cliente(id_utente),
+  FOREIGN KEY (id_indirizzo) REFERENCES indirizzo(id_indirizzo)
+);
+
+-- LOCALITA'
+CREATE TABLE localita (
+  id_localita INT AUTO_INCREMENT PRIMARY KEY,
+  città VARCHAR(50),
+  provincia VARCHAR(50),
+  regione VARCHAR(50)
+);
+
+-- VEICOLO
+CREATE TABLE veicoli (
+  id_veicolo INT AUTO_INCREMENT PRIMARY KEY,
+  marca VARCHAR(50),
+  modello VARCHAR(50),
+  anno_immatricolazione INT,
+  tipologia_carburante VARCHAR(30),
+  potenza INT,
+  adatto_neopatentati BOOLEAN
+);
+
+
+-- CATEGORIA VEICOLO
+CREATE TABLE categoria_veicolo (
+  id_categoria INT AUTO_INCREMENT PRIMARY KEY,
+  nome_categoria VARCHAR(50)
+);
+
+-- VEICOLO-CATEGORIA
+CREATE TABLE veicolo_categoria (
+  id_veicolo INT,
+  id_categoria INT,
+  PRIMARY KEY(id_veicolo, id_categoria),
+  FOREIGN KEY (id_veicolo) REFERENCES veicoli(id_veicolo),
+  FOREIGN KEY (id_categoria) REFERENCES categoria_veicolo(id_categoria)
+);
+
+-- MANUTENZIONE
+CREATE TABLE manutenzione (
+  id_manutenzione INT AUTO_INCREMENT PRIMARY KEY,
+  data DATE,
+  tipo VARCHAR(50),
+  costo DECIMAL(10,2),
+  descrizione TEXT,
+  id_veicolo INT,
+  FOREIGN KEY (id_veicolo) REFERENCES veicoli(id_veicolo)
+);
+
+-- INSERZIONE
+CREATE TABLE inserzioni (
+  id_inserzione INT AUTO_INCREMENT PRIMARY KEY,
+  descrizione TEXT,
+  id_proprietario INT,
+  id_localita INT,
+  FOREIGN KEY (id_proprietario) REFERENCES proprietario(id_utente),
+  FOREIGN KEY (id_localita) REFERENCES localita(id_localita)
+);
+
+-- RELAZIONE INSERZIONE - VEICOLO (1:N)
+CREATE TABLE veicolo_inserzione (
+  id_inserzione INT,
+  id_veicolo INT,
+  PRIMARY KEY(id_inserzione, id_veicolo),
+  FOREIGN KEY (id_inserzione) REFERENCES inserzioni(id_inserzione),
+  FOREIGN KEY (id_veicolo) REFERENCES veicoli(id_veicolo)
+);
+
+-- ACCESSORI
+CREATE TABLE accessorio (
+  id_accessorio INT AUTO_INCREMENT PRIMARY KEY,
+  nome VARCHAR(50),
+  descrizione TEXT
+);
+
+-- ACCESSORI EXTRA/INCLUSI per INSERZIONE
+CREATE TABLE accessori_inserzione (
+  id_inserzione INT,
+  id_accessorio INT,
+  tipo ENUM('incluso', 'extra'),
+  prezzo DECIMAL(10,2),
+  PRIMARY KEY (id_inserzione, id_accessorio),
+  FOREIGN KEY (id_inserzione) REFERENCES inserzioni(id_inserzione),
+  FOREIGN KEY (id_accessorio) REFERENCES accessorio(id_accessorio)
+);
+
+-- LUOGO
+CREATE TABLE luogo (
+  id_luogo INT AUTO_INCREMENT PRIMARY KEY,
+  nome VARCHAR(100),
+  tipologia ENUM('ritiro', 'deposito'),
+  città VARCHAR(50)
+);
+
+-- PERIODO (per noleggi)
+CREATE TABLE periodo (
+  id_periodo INT AUTO_INCREMENT PRIMARY KEY,
+  dataInizioPeriodo DATE,
+  dataFinePeriodo DATE
+);
+
+-- TARIFFARIO
+CREATE TABLE tariffario (
+  id_tariffario INT AUTO_INCREMENT PRIMARY KEY,
+  id_periodo INT,
+  sconto DECIMAL(4,2),
+  FOREIGN KEY (id_periodo) REFERENCES periodo(id_periodo)
+);
+
+-- NOLEGGIO
+CREATE TABLE noleggio (
+  id_noleggio INT AUTO_INCREMENT PRIMARY KEY,
+  id_cliente INT,
+  id_periodo INT,
+  data_inizio DATE,
+  data_fine DATE,
+  id_luogo_ritiro INT,
+  id_luogo_deposito INT,
+  FOREIGN KEY (id_cliente) REFERENCES cliente(id_utente),
+  FOREIGN KEY (id_periodo) REFERENCES periodo(id_periodo),
+  FOREIGN KEY (id_luogo_ritiro) REFERENCES luogo(id_luogo),
+  FOREIGN KEY (id_luogo_deposito) REFERENCES luogo(id_luogo)
+);
+
+-- RELAZIONE NOLEGGIO - VEICOLO
+CREATE TABLE noleggio_veicolo (
+  id_noleggio INT,
+  id_veicolo INT,
+  PRIMARY KEY (id_noleggio, id_veicolo),
+  FOREIGN KEY (id_noleggio) REFERENCES noleggio(id_noleggio),
+  FOREIGN KEY (id_veicolo) REFERENCES veicoli(id_veicolo)
+);
+
+
+-- PAGAMENTO
+CREATE TABLE pagamento (
+  id_pagamento INT AUTO_INCREMENT PRIMARY KEY,
+  id_noleggio INT,
+  data DATE,
+  importo DECIMAL(10,2),
+  metodo_pagamento VARCHAR(50),
+  stato_pagamento VARCHAR(20),
+  FOREIGN KEY (id_noleggio) REFERENCES noleggio(id_noleggio)
+);
+
+-- SINISTRO
+CREATE TABLE sinistro (
+  id_sinistro INT AUTO_INCREMENT PRIMARY KEY,
+  id_noleggio INT,
+  data DATE,
+  descrizione TEXT,
+  costo DECIMAL(10,2),
+  FOREIGN KEY (id_noleggio) REFERENCES noleggio(id_noleggio)
+);
+
+-- RECENSIONE
+CREATE TABLE recensione (
+  id_recensione INT AUTO_INCREMENT PRIMARY KEY,
+  id_noleggio INT,
+  voto INT CHECK (voto BETWEEN 1 AND 5),
+  commento TEXT,
+  data_recensione DATE,
+  FOREIGN KEY (id_noleggio) REFERENCES noleggio(id_noleggio)
+);
