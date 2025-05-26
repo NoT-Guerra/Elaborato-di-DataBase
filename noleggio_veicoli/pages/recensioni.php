@@ -10,11 +10,11 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Calcola la media dei voti
-$mediaStmt = $pdo->query("SELECT AVG(voto) AS media_voti, COUNT(*) AS totale FROM recensione");
+$mediaStmt = $pdo->query("SELECT AVG(voto) AS media_voti, COUNT(*) AS totale FROM recensioni");
 $mediaData = $mediaStmt->fetch(PDO::FETCH_ASSOC);
 
 // Recupera tutte le recensioni (puoi limitare o filtrare se necessario)
-$stmt = $pdo->query("SELECT voto, commento, data_recensione FROM recensione ORDER BY data_recensione DESC");
+$stmt = $pdo->query("SELECT voto, commento, data_recensione FROM recensioni ORDER BY data_recensione DESC");
 $recensioni = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 

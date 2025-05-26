@@ -2,6 +2,7 @@
 require_once '../includes/db.php';
 require_once '../includes/functions.php';
 check_logged_in();
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -16,7 +17,7 @@ $sql = "SELECT i.*, v.marca, v.modello, v.anno_immatricolazione, v.tipologia_car
                u.nome AS proprietario_nome, u.cognome AS proprietario_cognome
         FROM inserzioni i
         JOIN veicoli v ON v.id_veicolo = i.veicolo_id
-        JOIN utente u ON u.id_utente = v.proprietario_id
+        JOIN utente u ON u.id_utente = i.id_proprietario
         WHERE i.id_inserzione = ?";
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$inserzione_id]);
@@ -34,15 +35,17 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([$inserzione_id]);
 $gi_prenotati = (int)$stmt->fetchColumn();
-$disponibilita_residua = (int)$inserzione['disponibilita_giorni'] - $gi_prenotati;
+
+$disponibilita_giorni = isset($inserzione['disponibilita_giorni']) ? (int)$inserzione['disponibilita_giorni'] : 0;
+$disponibilita_residua = $disponibilita_giorni - $gi_prenotati;
 
 $success = $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $data_inizio  = $_POST['data_inizio']  ?? '';
-    $data_fine    = $_POST['data_fine']    ?? '';
-    $spedizione   = isset($_POST['spedizione']) ? 1 : 0;
-    $luogo_ritiro = $_POST['luogo_ritiro'] ?? '';
+    $data_inizio    = $_POST['data_inizio'] ?? '';
+    $data_fine      = $_POST['data_fine'] ?? '';
+    $spedizione     = isset($_POST['spedizione']) ? 1 : 0;
+    $luogo_ritiro   = $_POST['luogo_ritiro'] ?? '';
     $luogo_deposito = $_POST['luogo_deposito'] ?? '';
 
     try {
@@ -69,13 +72,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$error) {
-        // Tutto ok: registra noleggio
-        $sql = "INSERT INTO noleggio (inserzione_id, user_id, data_inizio, data_fine, luogo_ritiro, luogo_deposito, spedizione)
-                VALUES (?, ?, ?, ?, ?, ?, ?)";
+        // Registra noleggio
+        $sql = "INSERT INTO noleggio (id_inserzione, id_cliente, id_veicolo, data_inizio, data_fine, luogo_ritiro, luogo_deposito, spedizione)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
             $inserzione_id,
             $_SESSION['user_id'],
+            $inserzione['veicolo_id'],
             $d1->format('Y-m-d'),
             $d2->format('Y-m-d'),
             $luogo_ritiro,
@@ -84,26 +88,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
 
         // Aggiorna disponibilità residua
-        $stmt = $pdo->prepare("UPDATE inserzioni SET disponibilita_giorni = disponibilita_giorni - ? WHERE id = ?");
+        $stmt = $pdo->prepare("UPDATE inserzioni SET disponibilita_giorni = disponibilita_giorni - ? WHERE id_inserzione = ?");
         $stmt->execute([$giorni_richiesti, $inserzione_id]);
 
         $success = 'Noleggio confermato! Contatta il proprietario per il pagamento e i dettagli di consegna.';
-        // ricalcola disponibilità
         $disponibilita_residua -= $giorni_richiesti;
     }
 }
 
 // Calcola prezzo giornaliero e totale (senza sconto)
-$prezzo_giornaliero = $inserzione['prezzo_totale'] / $inserzione['durata_giorni'];
+// Evita divisione per zero
+if ($disponibilita_giorni > 0) {
+    $prezzo_giornaliero = $inserzione['prezzo_totale'] / $disponibilita_giorni;
+} else {
+    $prezzo_giornaliero = 0;
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Noleggia <?= htmlspecialchars($inserzione['marca'] . ' ' . $inserzione['modello']) ?></title>
-    <link rel="stylesheet" href="../assets/styles.css">
+    <link rel="stylesheet" href="../assets/styles.css" />
     <style>
-      .summary-box{background:#fff;border:1px solid #ccc;padding:15px;margin:15px 0;}
+        .summary-box { background:#fff; border:1px solid #ccc; padding:15px; margin:15px 0; }
+        .error { color: red; }
+        .success { color: green; }
     </style>
 </head>
 <body>
@@ -112,11 +123,10 @@ $prezzo_giornaliero = $inserzione['prezzo_totale'] / $inserzione['durata_giorni'
 <p>Proprietario: <?= htmlspecialchars($inserzione['proprietario_nome'].' '.$inserzione['proprietario_cognome']) ?></p>
 <p>Carburante: <?= htmlspecialchars($inserzione['tipologia_carburante']) ?></p>
 <p>Anno: <?= (int)$inserzione['anno_immatricolazione'] ?></p>
-</p>
 
 <div class="summary-box">
     <strong>Disponibilità residua:</strong> <?= $disponibilita_residua ?> giorni<br>
-    <strong>Prezzo giornaliero:</strong> <?= number_format($prezzo_giornaliero,2) ?> €<br>
+    <strong>Prezzo giornaliero:</strong> <?= number_format($prezzo_giornaliero, 2) ?> €<br>
 </div>
 
 <?php if ($error): ?>
@@ -140,28 +150,37 @@ $prezzo_giornaliero = $inserzione['prezzo_totale'] / $inserzione['durata_giorni'
 <?php endif; ?>
 
 <script>
-const spedizione = document.getElementById('spedizione');
-const details   = document.getElementById('spedizione_details');
-spedizione.addEventListener('change',()=>details.style.display=spedizione.checked?'block':'none');
+const spedizioneCheckbox = document.getElementById('spedizione');
+const spedizioneDetails = document.getElementById('spedizione_details');
+spedizioneCheckbox.addEventListener('change', () => {
+    spedizioneDetails.style.display = spedizioneCheckbox.checked ? 'block' : 'none';
+});
 
 const d1 = document.getElementById('data_inizio');
 const d2 = document.getElementById('data_fine');
 const preview = document.getElementById('cost_preview');
-const prezzoGiornaliero = <?= (float)$prezzo_giornaliero ?>;
+const prezzoGiornaliero = <?= json_encode($prezzo_giornaliero) ?>;
 
-function calc(){
-    if(!d1.value || !d2.value) return preview.style.display='none';
+function calc() {
+    if (!d1.value || !d2.value) {
+        preview.style.display = 'none';
+        return;
+    }
     const start = new Date(d1.value);
-    const end   = new Date(d2.value);
-    if(end < start) { preview.style.display='none'; return;}
-    const diffDays = Math.floor((end - start)/(1000*60*60*24))+1;
-    let costo = diffDays * prezzoGiornaliero;
-    preview.style.display='block';
+    const end = new Date(d2.value);
+    if (end < start) {
+        preview.style.display = 'none';
+        return;
+    }
+    const diffDays = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    const costo = diffDays * prezzoGiornaliero;
+    preview.style.display = 'block';
     preview.textContent = `Durata: ${diffDays} giorni - Costo stimato: € ${costo.toFixed(2)}`;
 }
-d1.addEventListener('change',calc);
-d2.addEventListener('change',calc);
+d1.addEventListener('change', calc);
+d2.addEventListener('change', calc);
 </script>
+
 <a href="../index.php">Torna alla Home</a>
 </body>
 </html>

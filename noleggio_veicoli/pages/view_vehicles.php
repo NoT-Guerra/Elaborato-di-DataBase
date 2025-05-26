@@ -32,7 +32,7 @@ if (!empty($_GET['prezzo_max'])) {
     $params[] = (float)$_GET['prezzo_max'];
 }
 if (!empty($_GET['neopatentati'])) {
-    $where[] = "v.neopatentati = 1";
+    $where[] = "v.adatto_neopatentati = 1";
 }
 
 if ($where) {
@@ -84,7 +84,7 @@ $inserzioni = $stmt->fetchAll();
         <?php endforeach; ?>
     </tbody>
 </table>
-<p> 
-<a href="../index.php">Torna alla Home</a>
+
+<p><a href="../index.php">Torna alla Home</a></p>
 </body>
 </html>
