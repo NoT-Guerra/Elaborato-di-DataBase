@@ -1,209 +1,186 @@
--- 1. CREA IL DATABASE
+-- =============================================================
+--  Schema: "noleggio_veicoli" (MySQL version)
+--  Descrizione: script SQL per la creazione del database
+--               compatibile con MySQL ≥ 8.0
+-- =============================================================
+
+-- ===========================
+--  Creazione del database
+-- ===========================
 CREATE DATABASE IF NOT EXISTS noleggio_veicoli;
 USE noleggio_veicoli;
 
--- 2. TABELLE
+-- =============================================================
+--  TABELLE DI BASE
+-- =============================================================
 
--- UTENTE
 CREATE TABLE utente (
-  id_utente INT AUTO_INCREMENT PRIMARY KEY,
-  nome VARCHAR(50),
-  cognome VARCHAR(50),
-  email VARCHAR(100) UNIQUE,
-  password VARCHAR(255),
-  stato_account VARCHAR(20) DEFAULT 'attivo'
+    id_utente        INT AUTO_INCREMENT PRIMARY KEY,
+    nome             VARCHAR(50)  NOT NULL,
+    cognome          VARCHAR(50)  NOT NULL,
+    email            VARCHAR(255) NOT NULL UNIQUE,
+    password         VARCHAR(255) NOT NULL,
+    stato_account    BOOLEAN      NOT NULL DEFAULT TRUE,
+    data_creazione   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-
--- CLIENTE
 CREATE TABLE cliente (
-  id_utente INT PRIMARY KEY,
-  FOREIGN KEY (id_utente) REFERENCES utente(id_utente)
+    id_cliente INT PRIMARY KEY,
+    FOREIGN KEY (id_cliente) REFERENCES utente(id_utente) ON DELETE CASCADE
 );
 
--- PROPRIETARIO
 CREATE TABLE proprietario (
-  id_utente INT PRIMARY KEY,
-  FOREIGN KEY (id_utente) REFERENCES utente(id_utente)
+    id_proprietario INT PRIMARY KEY,
+    FOREIGN KEY (id_proprietario) REFERENCES utente(id_utente) ON DELETE CASCADE
 );
 
--- INDIRIZZO
 CREATE TABLE indirizzo (
-  id_indirizzo INT AUTO_INCREMENT PRIMARY KEY,
-  via VARCHAR(100),
-  cap VARCHAR(10),
-  città VARCHAR(50),
-  provincia VARCHAR(50),
-  nazione VARCHAR(50)
+    id_indirizzo  INT AUTO_INCREMENT PRIMARY KEY,
+    id_cliente    INT NOT NULL,
+    via           VARCHAR(100) NOT NULL,
+    cap           VARCHAR(10)  NOT NULL,
+    citta         VARCHAR(50)  NOT NULL,
+    provincia     VARCHAR(50)  NOT NULL,
+    nazione       VARCHAR(50)  NOT NULL,
+    FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente) ON DELETE CASCADE
 );
 
--- RELAZIONE CLIENTE - INDIRIZZO (possiede)
-CREATE TABLE cliente_indirizzo (
-  id_cliente INT,
-  id_indirizzo INT,
-  PRIMARY KEY (id_cliente, id_indirizzo),
-  FOREIGN KEY (id_cliente) REFERENCES cliente(id_utente),
-  FOREIGN KEY (id_indirizzo) REFERENCES indirizzo(id_indirizzo)
-);
-
--- LOCALITA'
 CREATE TABLE localita (
-  id_localita INT AUTO_INCREMENT PRIMARY KEY,
-  città VARCHAR(50),
-  provincia VARCHAR(50),
-  regione VARCHAR(50)
+    id_localita INT AUTO_INCREMENT PRIMARY KEY,
+    citta       VARCHAR(50) NOT NULL,
+    provincia   VARCHAR(50) NOT NULL,
+    regione     VARCHAR(50) NOT NULL
 );
 
--- VEICOLO
-CREATE TABLE veicoli (
-  id_veicolo INT AUTO_INCREMENT PRIMARY KEY,
-  marca VARCHAR(50),
-  modello VARCHAR(50),
-  anno_immatricolazione INT,
-  tipologia_carburante VARCHAR(30),
-  potenza INT,
-  adatto_neopatentati BOOLEAN
+CREATE TABLE inserzione (
+    id_inserzione   INT AUTO_INCREMENT PRIMARY KEY,
+    id_proprietario INT NOT NULL,
+    id_localita     INT NOT NULL,
+    descrizione     TEXT NOT NULL,
+    data_creazione  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_proprietario) REFERENCES proprietario(id_proprietario) ON DELETE CASCADE,
+    FOREIGN KEY (id_localita) REFERENCES localita(id_localita)
 );
 
-
--- CATEGORIA VEICOLO
 CREATE TABLE categoria_veicolo (
-  id_categoria INT AUTO_INCREMENT PRIMARY KEY,
-  nome_categoria VARCHAR(50)
+    id_categoria   INT AUTO_INCREMENT PRIMARY KEY,
+    nome_categoria VARCHAR(50) NOT NULL UNIQUE
 );
 
--- VEICOLO-CATEGORIA
-CREATE TABLE veicolo_categoria (
-  id_veicolo INT,
-  id_categoria INT,
-  PRIMARY KEY(id_veicolo, id_categoria),
-  FOREIGN KEY (id_veicolo) REFERENCES veicoli(id_veicolo),
-  FOREIGN KEY (id_categoria) REFERENCES categoria_veicolo(id_categoria)
+CREATE TABLE veicolo (
+    id_veicolo             INT AUTO_INCREMENT PRIMARY KEY,
+    id_inserzione          INT NOT NULL,
+    id_categoria           INT NOT NULL,
+    marca                  VARCHAR(50) NOT NULL,
+    modello                VARCHAR(50) NOT NULL,
+    anno_immatricolazione  SMALLINT NOT NULL CHECK (anno_immatricolazione >= 1900),
+    tipologia_carburante   ENUM('benzina','diesel','elettrico','ibrido','GPL','metano') NOT NULL,
+    potenza                SMALLINT NOT NULL CHECK (potenza > 0),
+    adatto_neopatentati    BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (id_inserzione) REFERENCES inserzione(id_inserzione) ON DELETE CASCADE,
+    FOREIGN KEY (id_categoria)  REFERENCES categoria_veicolo(id_categoria)
 );
 
--- MANUTENZIONE
 CREATE TABLE manutenzione (
-  id_manutenzione INT AUTO_INCREMENT PRIMARY KEY,
-  data DATE,
-  tipo VARCHAR(50),
-  costo DECIMAL(10,2),
-  descrizione TEXT,
-  id_veicolo INT,
-  FOREIGN KEY (id_veicolo) REFERENCES veicoli(id_veicolo)
+    id_manutenzione INT AUTO_INCREMENT PRIMARY KEY,
+    id_veicolo      INT NOT NULL,
+    data            DATE NOT NULL,
+    tipo            VARCHAR(50) NOT NULL,
+    costo           DECIMAL(10,2) NOT NULL CHECK (costo >= 0),
+    descrizione     TEXT,
+    FOREIGN KEY (id_veicolo) REFERENCES veicolo(id_veicolo) ON DELETE CASCADE
 );
 
--- INSERZIONE
-CREATE TABLE inserzioni (
-  id_inserzione INT AUTO_INCREMENT PRIMARY KEY,
-  descrizione TEXT,
-  id_proprietario INT,
-  id_localita INT,
-  FOREIGN KEY (id_proprietario) REFERENCES proprietario(id_utente),
-  FOREIGN KEY (id_localita) REFERENCES localita(id_localita)
-);
-
--- RELAZIONE INSERZIONE - VEICOLO (1:N)
-CREATE TABLE veicolo_inserzione (
-  id_inserzione INT,
-  id_veicolo INT,
-  PRIMARY KEY(id_inserzione, id_veicolo),
-  FOREIGN KEY (id_inserzione) REFERENCES inserzioni(id_inserzione),
-  FOREIGN KEY (id_veicolo) REFERENCES veicoli(id_veicolo)
-);
-
--- ACCESSORI
-CREATE TABLE accessorio (
-  id_accessorio INT AUTO_INCREMENT PRIMARY KEY,
-  nome VARCHAR(50),
-  descrizione TEXT
-);
-
--- ACCESSORI EXTRA/INCLUSI per INSERZIONE
-CREATE TABLE accessori_inserzione (
-  id_inserzione INT,
-  id_accessorio INT,
-  tipo ENUM('incluso', 'extra'),
-  prezzo DECIMAL(10,2),
-  PRIMARY KEY (id_inserzione, id_accessorio),
-  FOREIGN KEY (id_inserzione) REFERENCES inserzioni(id_inserzione),
-  FOREIGN KEY (id_accessorio) REFERENCES accessorio(id_accessorio)
-);
-
--- LUOGO
 CREATE TABLE luogo (
-  id_luogo INT AUTO_INCREMENT PRIMARY KEY,
-  nome VARCHAR(100),
-  tipologia ENUM('ritiro', 'deposito'),
-  città VARCHAR(50)
+    id_luogo  INT AUTO_INCREMENT PRIMARY KEY,
+    nome      VARCHAR(100) NOT NULL,
+    tipologia ENUM('deposito','ritiro','deposito_ritiro') NOT NULL,
+    ritiro    BOOLEAN DEFAULT FALSE,
+    deposito  BOOLEAN DEFAULT FALSE
 );
 
--- PERIODO (per noleggi)
 CREATE TABLE periodo (
-  id_periodo INT AUTO_INCREMENT PRIMARY KEY,
-  dataInizioPeriodo DATE,
-  dataFinePeriodo DATE
+    id_periodo   INT AUTO_INCREMENT PRIMARY KEY,
+    data_inizio  DATE NOT NULL,
+    data_fine    DATE NOT NULL,
+    CHECK (data_fine > data_inizio)
 );
 
--- TARIFFARIO
 CREATE TABLE tariffario (
-  id_tariffario INT AUTO_INCREMENT PRIMARY KEY,
-  id_periodo INT,
-  sconto DECIMAL(4,2),
-  FOREIGN KEY (id_periodo) REFERENCES periodo(id_periodo)
+    id_tariffario INT AUTO_INCREMENT PRIMARY KEY,
+    id_periodo    INT NOT NULL UNIQUE,
+    sconto        DECIMAL(5,2) NOT NULL CHECK (sconto >= 0),
+    FOREIGN KEY (id_periodo) REFERENCES periodo(id_periodo) ON DELETE CASCADE
 );
 
--- NOLEGGIO
 CREATE TABLE noleggio (
-  id_noleggio INT AUTO_INCREMENT PRIMARY KEY,
-  id_cliente INT,
-  id_periodo INT,
-  data_inizio DATE,
-  data_fine DATE,
-  id_luogo_ritiro INT,
-  id_luogo_deposito INT,
-  FOREIGN KEY (id_cliente) REFERENCES cliente(id_utente),
-  FOREIGN KEY (id_periodo) REFERENCES periodo(id_periodo),
-  FOREIGN KEY (id_luogo_ritiro) REFERENCES luogo(id_luogo),
-  FOREIGN KEY (id_luogo_deposito) REFERENCES luogo(id_luogo)
+    id_noleggio   INT AUTO_INCREMENT PRIMARY KEY,
+    id_cliente    INT NOT NULL,
+    id_veicolo    INT NOT NULL,
+    id_luogo      INT NOT NULL,
+    id_periodo    INT,
+    data_inizio   DATE NOT NULL,
+    data_fine     DATE NOT NULL,
+    FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente) ON DELETE CASCADE,
+    FOREIGN KEY (id_veicolo) REFERENCES veicolo(id_veicolo),
+    FOREIGN KEY (id_luogo)   REFERENCES luogo(id_luogo),
+    FOREIGN KEY (id_periodo) REFERENCES periodo(id_periodo),
+    CHECK (data_fine > data_inizio)
 );
 
--- RELAZIONE NOLEGGIO - VEICOLO
-CREATE TABLE noleggio_veicolo (
-  id_noleggio INT,
-  id_veicolo INT,
-  PRIMARY KEY (id_noleggio, id_veicolo),
-  FOREIGN KEY (id_noleggio) REFERENCES noleggio(id_noleggio),
-  FOREIGN KEY (id_veicolo) REFERENCES veicoli(id_veicolo)
-);
-
-
--- PAGAMENTO
 CREATE TABLE pagamento (
-  id_pagamento INT AUTO_INCREMENT PRIMARY KEY,
-  id_noleggio INT,
-  data DATE,
-  importo DECIMAL(10,2),
-  metodo_pagamento VARCHAR(50),
-  stato_pagamento VARCHAR(20),
-  FOREIGN KEY (id_noleggio) REFERENCES noleggio(id_noleggio)
+    id_pagamento  INT AUTO_INCREMENT PRIMARY KEY,
+    id_noleggio   INT UNIQUE NOT NULL,
+    data          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    importo       DECIMAL(10,2) NOT NULL CHECK (importo >= 0),
+    metodo_pagamento ENUM('carta_credito','bancomat','paypal','bonifico') NOT NULL,
+    stato_pagamento  ENUM('in_attesa','completato','fallito') NOT NULL,
+    FOREIGN KEY (id_noleggio) REFERENCES noleggio(id_noleggio) ON DELETE CASCADE
 );
 
--- SINISTRO
 CREATE TABLE sinistro (
-  id_sinistro INT AUTO_INCREMENT PRIMARY KEY,
-  id_noleggio INT,
-  data DATE,
-  descrizione TEXT,
-  costo DECIMAL(10,2),
-  FOREIGN KEY (id_noleggio) REFERENCES noleggio(id_noleggio)
+    id_sinistro  INT AUTO_INCREMENT PRIMARY KEY,
+    id_noleggio  INT NOT NULL,
+    data         DATE NOT NULL,
+    descrizione  TEXT NOT NULL,
+    costo        DECIMAL(10,2) NOT NULL CHECK (costo >= 0),
+    FOREIGN KEY (id_noleggio) REFERENCES noleggio(id_noleggio) ON DELETE CASCADE
 );
 
--- RECENSIONE
 CREATE TABLE recensione (
-  id_recensione INT AUTO_INCREMENT PRIMARY KEY,
-  id_noleggio INT,
-  voto INT CHECK (voto BETWEEN 1 AND 5),
-  commento TEXT,
-  data_recensione DATE,
-  FOREIGN KEY (id_noleggio) REFERENCES noleggio(id_noleggio)
+    id_recensione   INT AUTO_INCREMENT PRIMARY KEY,
+    id_noleggio     INT NOT NULL,
+    voto            SMALLINT NOT NULL CHECK (voto BETWEEN 1 AND 5),
+    commento        TEXT,
+    data_recensione TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_noleggio) REFERENCES noleggio(id_noleggio) ON DELETE CASCADE
 );
+
+CREATE TABLE accessorio (
+    id_accessorio INT AUTO_INCREMENT PRIMARY KEY,
+    id_inserzione INT NOT NULL,
+    nome          VARCHAR(100) NOT NULL,
+    descrizione   TEXT,
+    FOREIGN KEY (id_inserzione) REFERENCES inserzione(id_inserzione) ON DELETE CASCADE
+);
+
+CREATE TABLE accessori_inclusi (
+    id_accessorio INT PRIMARY KEY,
+    FOREIGN KEY (id_accessorio) REFERENCES accessorio(id_accessorio) ON DELETE CASCADE
+);
+
+CREATE TABLE accessori_extra (
+    id_accessorio INT PRIMARY KEY,
+    prezzo        DECIMAL(10,2) NOT NULL CHECK (prezzo >= 0),
+    FOREIGN KEY (id_accessorio) REFERENCES accessorio(id_accessorio) ON DELETE CASCADE
+);
+
+-- Indici
+CREATE INDEX idx_noleggio_cliente  ON noleggio(id_cliente);
+CREATE INDEX idx_noleggio_veicolo  ON noleggio(id_veicolo);
+CREATE INDEX idx_recensione_noleggio ON recensione(id_noleggio);
+CREATE INDEX idx_manutenzione_data ON manutenzione(data);
+
+-- FINE SCRIPT
+
+

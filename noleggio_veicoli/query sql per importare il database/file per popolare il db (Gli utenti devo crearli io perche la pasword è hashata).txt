@@ -1,90 +1,78 @@
+USE noleggio_veicoli;
 
+-- 1. UTENTI
+INSERT INTO utente (id_utente, nome, cognome, email, password) VALUES
+(1, 'Nicholas', 'Guerra', 'nicholasguerra@gmail.com', 'nichoalsguerra'),
+(2, 'Mario', 'Rossi', 'mario.rossi@email.it', 'pwd1'),
+(3, 'Luigi', 'Verdi', 'luigi.verdi@email.it', 'pwd2'),
+(4, 'Anna', 'Bianchi', 'anna.bianchi@email.it', 'pwd3'),
+(5, 'Sara', 'Neri', 'sara.neri@email.it', 'pwd4');
 
--- CLIENTI E PROPRIETARI
-INSERT INTO cliente (id_utente) VALUES (1), (3);
-INSERT INTO proprietario (id_utente) VALUES (2), (4);
+-- 2. CLIENTI e PROPRIETARI
+INSERT INTO cliente (id_cliente) VALUES (2), (4);
+INSERT INTO proprietario (id_proprietario) VALUES (3), (5);
 
--- INDIRIZZI
-INSERT INTO indirizzo (via, cap, città, provincia, nazione) VALUES
-('Via Roma 10', '00100', 'Roma', 'RM', 'Italia'),
-('Via Milano 20', '20100', 'Milano', 'MI', 'Italia');
+-- 3. INDIRIZZI
+INSERT INTO indirizzo (id_cliente, via, cap, citta, provincia, nazione) VALUES
+(2, 'Via Roma 10', '00100', 'Roma', 'RM', 'Italia'),
+(4, 'Via Milano 20', '20100', 'Milano', 'MI', 'Italia');
 
--- CLIENTE - INDIRIZZO
-INSERT INTO cliente_indirizzo (id_cliente, id_indirizzo) VALUES
-(1, 1),
-(3, 2);
-
--- LOCALITÀ
-INSERT INTO localita (città, provincia, regione) VALUES
+-- 4. LOCALITÀ
+INSERT INTO localita (citta, provincia, regione) VALUES
 ('Roma', 'RM', 'Lazio'),
 ('Milano', 'MI', 'Lombardia');
 
--- VEICOLI
-INSERT INTO veicoli (marca, modello, anno_immatricolazione, tipologia_carburante, potenza, adatto_neopatentati) VALUES
-('Fiat', 'Panda', 2020, 'Benzina', 70, TRUE),
-('Volkswagen', 'Golf', 2018, 'Diesel', 110, FALSE),
-('Tesla', 'Model 3', 2022, 'Elettrico', 150, FALSE);
+-- 5. INSERZIONI
+INSERT INTO inserzione (id_proprietario, id_localita, descrizione) VALUES
+(3, 1, 'Fiat Panda, ottimo stato, noleggio minimo 2 giorni'),
+(5, 2, 'Tesla Model 3, guida autonoma disponibile');
 
--- CATEGORIE VEICOLO
+-- 6. CATEGORIE VEICOLO
 INSERT INTO categoria_veicolo (nome_categoria) VALUES
 ('Utilitaria'), ('Berlina'), ('Elettrica');
 
--- VEICOLO - CATEGORIA
-INSERT INTO veicolo_categoria (id_veicolo, id_categoria) VALUES
-(1, 1),
-(2, 2),
-(3, 3);
+-- 7. VEICOLI
+INSERT INTO veicolo (id_inserzione, id_categoria, marca, modello, anno_immatricolazione, tipologia_carburante, potenza, adatto_neopatentati) VALUES
+(1, 1, 'Fiat', 'Panda', 2020, 'benzina', 70, TRUE),
+(1, 2, 'Volkswagen', 'Golf', 2018, 'diesel', 110, FALSE),
+(2, 3, 'Tesla', 'Model 3', 2022, 'elettrico', 150, FALSE);
 
--- INSERZIONI
-INSERT INTO inserzioni (descrizione, id_proprietario, id_localita) VALUES
-('Fiat Panda, ottimo stato, noleggio minimo 2 giorni', 2, 1),
-('Tesla Model 3, guida autonoma disponibile', 4, 2);
+-- 8. LUOGHI
+INSERT INTO luogo (nome, tipologia, ritiro, deposito) VALUES
+('Stazione Termini', 'ritiro', TRUE, FALSE),
+('Aeroporto Linate', 'deposito', FALSE, TRUE);
 
--- VEICOLO - INSERZIONE
-INSERT INTO veicolo_inserzione (id_inserzione, id_veicolo) VALUES
-(1, 1),
-(2, 3);
-
--- ACCESSORI
-INSERT INTO accessorio (nome, descrizione) VALUES
-('GPS', 'Navigatore satellitare'),
-('Seggiolino bambini', 'Adatto a bambini fino a 4 anni');
-
--- ACCESSORI - INSERZIONE
-INSERT INTO accessori_inserzione (id_inserzione, id_accessorio, tipo, prezzo) VALUES
-(1, 1, 'incluso', 0.00),
-(2, 2, 'extra', 10.00);
-
--- LUOGHI
-INSERT INTO luogo (nome, tipologia, città) VALUES
-('Stazione Termini', 'ritiro', 'Roma'),
-('Aeroporto Linate', 'deposito', 'Milano');
-
--- PERIODI
-INSERT INTO periodo (dataInizioPeriodo, dataFinePeriodo) VALUES
+-- 9. PERIODI
+INSERT INTO periodo (data_inizio, data_fine) VALUES
 ('2025-06-01', '2025-06-15'),
 ('2025-07-01', '2025-07-10');
 
--- TARIFFARIO
+-- 10. TARIFFARIO
 INSERT INTO tariffario (id_periodo, sconto) VALUES
-(1, 0.10), (2, 0.15);
+(1, 0.10),
+(2, 0.15);
 
--- NOLEGGI
-INSERT INTO noleggio (id_cliente, id_periodo, data_inizio, data_fine, id_luogo_ritiro, id_luogo_deposito) VALUES
-(1, 1, '2025-06-01', '2025-06-10', 1, 2);
+-- 11. NOLEGGIO
+INSERT INTO noleggio (id_cliente, id_veicolo, id_luogo, id_periodo, data_inizio, data_fine) VALUES
+(2, 1, 1, 1, '2025-06-01', '2025-06-10');
 
--- NOLEGGIO - VEICOLO
-INSERT INTO noleggio_veicolo (id_noleggio, id_veicolo) VALUES
-(1, 1);
-
--- PAGAMENTO
+-- 12. PAGAMENTO
 INSERT INTO pagamento (id_noleggio, data, importo, metodo_pagamento, stato_pagamento) VALUES
-(1, '2025-06-01', 250.00, 'Carta di credito', 'completato');
+(1, '2025-06-01', 250.00, 'carta_credito', 'completato');
 
--- SINISTRO
+-- 13. SINISTRO
 INSERT INTO sinistro (id_noleggio, data, descrizione, costo) VALUES
 (1, '2025-06-08', 'Piccolo graffio sulla portiera', 50.00);
 
--- RECENSIONE
+-- 14. RECENSIONE
 INSERT INTO recensione (id_noleggio, voto, commento, data_recensione) VALUES
 (1, 5, 'Servizio eccellente, auto pulita e affidabile!', '2025-06-12');
+
+-- 15. ACCESSORI
+INSERT INTO accessorio (id_inserzione, nome, descrizione) VALUES
+(1, 'GPS', 'Navigatore satellitare'),
+(2, 'Seggiolino bambini', 'Adatto a bambini fino a 4 anni');
+
+-- 16. ACCESSORI INCLUSI / EXTRA
+INSERT INTO accessori_inclusi (id_accessorio) VALUES (1);
+INSERT INTO accessori_extra (id_accessorio, prezzo) VALUES (2, 10.00);
