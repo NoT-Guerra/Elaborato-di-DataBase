@@ -112,6 +112,8 @@ $indirizzi = $stmt2->fetchAll(PDO::FETCH_ASSOC);
     <?php endif; ?>
 
     <p><a class="button-link" href="add_shipping_address.php">Aggiungi indirizzo di spedizione</a></p>
+    <p><a class="button-link" href="manage_sinistri.php">Gestisci Sinistri</a></p>
+    <p><a class="button-link" href="storico_noleggi.php">Visualizza Storico Noleggi</a></p>
     <p><a href="../index.php">&larr; Torna alla Home</a></p>
 </div>
 </body>

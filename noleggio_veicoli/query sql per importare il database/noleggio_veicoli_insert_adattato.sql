@@ -1,4 +1,3 @@
-
 USE noleggio_veicoli;
 
 -- 1. INDIRIZZI
@@ -8,14 +7,18 @@ INSERT INTO indirizzo (id_indirizzo, via, cap, città, provincia, nazione) VALUE
 
 -- 2. UTENTI
 INSERT INTO utente (nome, cognome, email, password, stato_account, id_indirizzo) VALUES
-('Mario', 'Rossi', 'mario.rossi@email.it', 'pwd1', "attivo", 1),
-('Luigi', 'Verdi', 'luigi.verdi@email.it', 'pwd2', "attivo", 1),
-('Anna', 'Bianchi', 'anna.bianchi@email.it', 'pwd3', "attivo", 2),
-('Sara', 'Neri', 'sara.neri@email.it', 'pwd4', "attivo", 2);
+('Mario', 'Rossi', 'mario.rossi@email.it', 'pwd1', 'attivo', 1),
+('Luigi', 'Verdi', 'luigi.verdi@email.it', 'pwd2', 'attivo', 1),
+('Anna', 'Bianchi', 'anna.bianchi@email.it', 'pwd3', 'attivo', 2),
+('Sara', 'Neri', 'sara.neri@email.it', 'pwd4', 'attivo', 2);
 
 -- 3. CLIENTI e PROPRIETARI
 INSERT INTO cliente (id_utente) VALUES (2), (4);
+
 INSERT INTO proprietario (id_utente) VALUES (3), (5);
+
+-- Inserimento cliente aggiuntivo richiesto
+INSERT INTO cliente (id_utente) VALUES (1);
 
 -- 4. LOCALITÀ
 INSERT INTO localita (id_località, città, provincia, regione) VALUES
@@ -94,7 +97,8 @@ INSERT INTO noleggio (id_noleggio, data_inizio, data_fine, id_cliente, id_propri
 (1, '2025-06-01', '2025-06-10', 2, 3, 'AA111AA', 1),
 (2, '2025-07-01', '2025-07-05', 4, 5, 'BB222BB', 2),
 (3, '2025-06-05', '2025-06-12', 2, 3, 'CC333CC', 3),
-(4, '2025-07-02', '2025-07-09', 4, 3, 'DD444DD', 4);
+(4, '2025-07-02', '2025-07-09', 4, 3, 'DD444DD', 4),
+(5, '2025-06-01', '2025-06-07', 1, 3, 'AA111AA', 1);
 
 -- 17. RELAZIONI aggiuntive
 INSERT INTO deposita (id_luogo, id_noleggio) VALUES (1, 1), (2, 2), (1, 3), (2, 4);
