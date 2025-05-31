@@ -165,10 +165,11 @@ CREATE TABLE `pagamento` (
 
 CREATE TABLE `periodo` (
   `id_periodo` int NOT NULL,
-  `dataInizioPeriodo` date DEFAULT NULL,
-  `dataFinePeriodo` date DEFAULT NULL,
+  `dataInizioPeriodo` varchar(5) DEFAULT NULL,
+  `dataFinePeriodo` varchar(5) DEFAULT NULL,
   PRIMARY KEY (`id_periodo`)
 );
+
 
 CREATE TABLE `possiede` (
   `id_utente` int NOT NULL,

@@ -69,8 +69,8 @@ INSERT INTO luogo (id_luogo, nome, tipologia, ritiro, deposito) VALUES
 
 -- 12. PERIODI
 INSERT INTO periodo (id_periodo, dataInizioPeriodo, dataFinePeriodo) VALUES
-(1, '2025-06-01', '2025-06-15'),
-(2, '2025-07-01', '2025-07-10');
+(1, '06-01', '06-15'),
+(2, '07-01', '07-10');
 
 -- 13. TARIFFARIO
 INSERT INTO tariffario (id_tariffario, sconto) VALUES
