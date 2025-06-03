@@ -9,8 +9,8 @@ $utente_id = $_SESSION['user_id'];
 $stmt = $pdo->prepare("
     SELECT n.*, v.marca, v.modello, v.targa
     FROM noleggio n
-    JOIN veicolo v ON n.id_veicolo = v.targa
-    WHERE n.id_cliente = ?
+    JOIN veicolo v ON n.targa = v.targa
+    WHERE n.id_utente = ?
     ORDER BY n.data_inizio DESC
 ");
 $stmt->execute([$utente_id]);

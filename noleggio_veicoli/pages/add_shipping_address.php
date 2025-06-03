@@ -4,17 +4,35 @@ require_once '../includes/functions.php';
 check_logged_in();
 
 $error = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $indirizzo = $_POST['indirizzo'];
-    $citta = $_POST['citta'];
-    $cap = $_POST['cap'];
-    $provincia = $_POST['provincia'];
 
-    if ($indirizzo && $citta && $cap && $provincia) {
-        $stmt = $pdo->prepare("INSERT INTO indirizzi_spedizione (user_id, indirizzo, citta, cap, provincia) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$_SESSION['user_id'], $indirizzo, $citta, $cap, $provincia]);
-        header('Location: profile.php');
-        exit();
+$via = '';
+$citta = '';
+$cap = '';
+$provincia = '';
+$nazione = 'Italia';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $via = trim($_POST['indirizzo'] ?? '');
+    $citta = trim($_POST['citta'] ?? '');
+    $cap = trim($_POST['cap'] ?? '');
+    $provincia = trim($_POST['provincia'] ?? '');
+    $nazione = trim($_POST['nazione'] ?? 'Italia');
+
+    if ($via && $citta && $cap && $provincia && $nazione) {
+        // Validazione semplice CAP: numerico e lunghezza 5 (modifica se serve)
+        if (!preg_match('/^\d{5}$/', $cap)) {
+            $error = "Il CAP deve essere composto da 5 cifre.";
+        } else {
+            try {
+                $stmt = $pdo->prepare("INSERT INTO INDIRIZZO (via, cap, citta, provincia, nazione, id_utente) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$via, $cap, $citta, $provincia, $nazione, $_SESSION['user_id']]);
+
+                header('Location: profile.php');
+                exit();
+            } catch (PDOException $e) {
+                $error = "Errore durante il salvataggio: " . htmlspecialchars($e->getMessage());
+            }
+        }
     } else {
         $error = "Compila tutti i campi.";
     }
@@ -34,30 +52,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             justify-content: center;
             padding: 50px 20px;
         }
-
         .container {
             max-width: 500px;
             width: 100%;
             text-align: center;
         }
-
         h1 {
             margin-bottom: 30px;
         }
-
         form {
             display: flex;
             flex-direction: column;
             gap: 15px;
         }
-
         label {
             display: flex;
             flex-direction: column;
             text-align: left;
             font-weight: bold;
         }
-
         input {
             padding: 8px;
             font-size: 1em;
@@ -65,7 +78,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: 4px;
             margin-top: 5px;
         }
-
         button {
             background-color: #1e90ff;
             color: white;
@@ -75,27 +87,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: 6px;
             cursor: pointer;
         }
-
         button:hover {
             background-color: #005bb5;
         }
-
         .error {
             color: red;
             margin-bottom: 20px;
         }
-
         .back-link {
             margin-top: 20px;
             display: inline-block;
         }
-
         .back-link a {
             color: #007BFF;
             text-decoration: none;
             font-weight: bold;
         }
-
         .back-link a:hover {
             text-decoration: underline;
         }
@@ -109,25 +116,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <p class="error"><?= htmlspecialchars($error) ?></p>
     <?php endif; ?>
 
-    <form method="POST">
+    <form method="POST" novalidate>
         <label>
             Indirizzo:
-            <input type="text" name="indirizzo" required>
+            <input type="text" name="indirizzo" required value="<?= htmlspecialchars($via) ?>" />
         </label>
 
         <label>
             Città:
-            <input type="text" name="citta" required>
+            <input type="text" name="citta" required value="<?= htmlspecialchars($citta) ?>" />
         </label>
 
         <label>
             CAP:
-            <input type="text" name="cap" required>
+            <input type="text" name="cap" required pattern="\d{5}" title="Deve contenere 5 cifre" value="<?= htmlspecialchars($cap) ?>" />
         </label>
 
         <label>
             Provincia:
-            <input type="text" name="provincia" required>
+            <input type="text" name="provincia" required value="<?= htmlspecialchars($provincia) ?>" />
+        </label>
+
+        <label>
+            Nazione:
+            <input type="text" name="nazione" required value="<?= htmlspecialchars($nazione) ?>" />
         </label>
 
         <button type="submit">Aggiungi</button>

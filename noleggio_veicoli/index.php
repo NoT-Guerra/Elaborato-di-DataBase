@@ -11,18 +11,18 @@ if ($user_logged_in) {
 }
 
 $stmt = $pdo->query("
-    SELECT 
-        i.id_inserzione, 
-        i.descrizione, 
-        v.marca, 
-        v.modello, 
-        v.anno_immatricolazione AS anno, 
-        v.tipologia_carburante AS carburante
-    FROM inserzione i
-    JOIN riguarda r ON i.id_inserzione = r.id_inserzione
-    JOIN veicolo v ON r.targa = v.targa
-    ORDER BY i.id_inserzione DESC
-    LIMIT 5
+SELECT 
+    i.id_inserzione, 
+    i.descrizione, 
+    v.marca, 
+    v.modello, 
+    v.anno_immatricolazione AS anno, 
+    v.tipologia_carburante AS carburante
+FROM INSERZIONE i
+JOIN VEICOLO v ON i.id_inserzione = v.id_inserzione
+ORDER BY i.id_inserzione DESC
+LIMIT 5;
+
 ");
 
 $inserzioni = $stmt->fetchAll(PDO::FETCH_ASSOC);

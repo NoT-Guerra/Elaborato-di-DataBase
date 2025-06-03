@@ -8,9 +8,14 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+// Query media voto e totale recensioni, con gestione eventuale risultati nulli
 $mediaStmt = $pdo->query("SELECT AVG(voto) AS media_voti, COUNT(*) AS totale FROM recensione");
 $mediaData = $mediaStmt->fetch(PDO::FETCH_ASSOC);
 
+$mediaVoti = $mediaData['media_voti'] ?? 0;
+$totaleRecensioni = $mediaData['totale'] ?? 0;
+
+// Recupero recensioni ordinate per data decrescente
 $stmt = $pdo->query("SELECT voto, commento, data_recensione FROM recensione ORDER BY data_recensione DESC");
 $recensioni = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -65,13 +70,15 @@ $recensioni = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <h1>Recensioni degli utenti</h1>
 
         <div class="media">
-            ⭐ Media: <?= number_format($mediaData['media_voti'], 1) ?> / 5 (<?= $mediaData['totale'] ?> recensioni)
+            ⭐ Media: <?= number_format($mediaVoti, 1) ?> / 5 (<?= $totaleRecensioni ?> recensioni)
         </div>
 
-        <?php if (count($recensioni) > 0): ?>
+        <?php if (!empty($recensioni)): ?>
             <?php foreach ($recensioni as $r): ?>
                 <div class="recensione-card">
-                    <div class="stars"><?= str_repeat('★', (int)$r['voto']) . str_repeat('☆', 5 - (int)$r['voto']) ?></div>
+                    <div class="stars">
+                        <?= str_repeat('★', (int)$r['voto']) . str_repeat('☆', 5 - (int)$r['voto']) ?>
+                    </div>
                     <p><strong>Data:</strong> <?= htmlspecialchars($r['data_recensione']) ?></p>
                     <p><?= nl2br(htmlspecialchars($r['commento'])) ?></p>
                 </div>

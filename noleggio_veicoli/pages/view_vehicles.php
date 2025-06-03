@@ -19,22 +19,23 @@ if (!empty($_GET['tipologia_carburante'])) {
     $where[] = "v.tipologia_carburante = ?";
     $params[] = $_GET['tipologia_carburante'];
 }
-if (!empty($_GET['prezzo_min'])) {
+if (!empty($_GET['prezzo_min']) && is_numeric($_GET['prezzo_min'])) {
     $where[] = "i.prezzo_giornaliero >= ?";
     $params[] = (float)$_GET['prezzo_min'];
 }
-if (!empty($_GET['prezzo_max'])) {
+if (!empty($_GET['prezzo_max']) && is_numeric($_GET['prezzo_max'])) {
     $where[] = "i.prezzo_giornaliero <= ?";
     $params[] = (float)$_GET['prezzo_max'];
 }
-if (!empty($_GET['neopatentati'])) {
-    $where[] = "(v.potenza * 1000 / v.peso) <= 75";
+if (!empty($_GET['neopatentati']) && $_GET['neopatentati'] === 'on') {
+    $where[] = "v.peso > 0 AND (v.potenza * 1000 / v.peso) <= 75";
 }
 
 // 2. Query SQL
 $query = "
     SELECT
         i.id_inserzione AS inserzione_id,
+        v.targa,
         v.marca,
         v.modello,
         v.anno_immatricolazione AS anno,
@@ -44,8 +45,7 @@ $query = "
         i.descrizione,
         i.prezzo_giornaliero AS importo
     FROM inserzione i
-    JOIN riguarda r ON r.id_inserzione = i.id_inserzione
-    JOIN veicolo v ON v.targa = r.targa
+    JOIN veicolo v ON v.id_inserzione = i.id_inserzione
 ";
 
 if ($where) {
@@ -63,96 +63,36 @@ $inserzioni = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8" />
     <title>Veicoli Disponibili</title>
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            max-width: 1200px; 
-            margin: auto; 
-            padding: 20px; 
-            background: #f9f9f9;
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
         }
-        h1 {
-            color: #333;
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
         }
-        form {
-            margin-bottom: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
+        th, td {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
         }
         form input[type="text"],
         form input[type="number"] {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 1rem;
+            padding: 6px;
+            margin-right: 10px;
+            margin-bottom: 10px;
             width: 150px;
-            box-sizing: border-box;
         }
         form label {
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            margin-right: 15px;
         }
-        form button {
-            padding: 8px 15px;
-            font-size: 1rem;
-            background-color: #007BFF;
-            border: none;
-            border-radius: 4px;
-            color: white;
+        button {
+            padding: 6px 12px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        form button:hover {
-            background-color: #0056b3;
-        }
-        table { 
-            border-collapse: collapse; 
-            width: 100%; 
-            background: #fff;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            border-radius: 5px;
-            overflow: hidden;
-        }
-        th, td { 
-            padding: 10px 12px; 
-            border: 1px solid #ddd; 
-            text-align: left; 
-            font-size: 0.95rem;
-        }
-        th { 
-            background-color: #f0f0f0; 
-            font-weight: 600;
-            color: #333;
-        }
-        tbody tr:hover {
-            background-color: #f9f9f9;
-        }
-        a {
-            color: #007BFF;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        p {
-            margin-top: 30px;
-            text-align: center;
-        }
-        @media (max-width: 700px) {
-            form {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            form input[type="text"],
-            form input[type="number"] {
-                width: 100%;
-            }
-            table, th, td {
-                font-size: 0.85rem;
-            }
         }
     </style>
 </head>
@@ -163,10 +103,10 @@ $inserzioni = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <input type="text" name="marca" placeholder="Marca" value="<?= htmlspecialchars($_GET['marca'] ?? '') ?>" />
     <input type="text" name="modello" placeholder="Modello" value="<?= htmlspecialchars($_GET['modello'] ?? '') ?>" />
     <input type="text" name="tipologia_carburante" placeholder="Carburante" value="<?= htmlspecialchars($_GET['tipologia_carburante'] ?? '') ?>" />
-    <input type="number" name="prezzo_min" placeholder="Prezzo min" value="<?= htmlspecialchars($_GET['prezzo_min'] ?? '') ?>" step="0.01"/>
-    <input type="number" name="prezzo_max" placeholder="Prezzo max" value="<?= htmlspecialchars($_GET['prezzo_max'] ?? '') ?>" step="0.01"/>
+    <input type="number" name="prezzo_min" placeholder="Prezzo min" value="<?= htmlspecialchars($_GET['prezzo_min'] ?? '') ?>" step="0.01" min="0" />
+    <input type="number" name="prezzo_max" placeholder="Prezzo max" value="<?= htmlspecialchars($_GET['prezzo_max'] ?? '') ?>" step="0.01" min="0" />
     <label>
-        <input type="checkbox" name="neopatentati" <?= isset($_GET['neopatentati']) ? 'checked' : '' ?> /> Adatto a neopatentati
+        <input type="checkbox" name="neopatentati" <?= (!empty($_GET['neopatentati']) && $_GET['neopatentati'] === 'on') ? 'checked' : '' ?> /> Adatto a neopatentati
     </label>
     <button type="submit">Cerca</button>
 </form>
@@ -184,6 +124,7 @@ $inserzioni = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <th>Prezzo Giornaliero</th>
             <th>Descrizione</th>
             <th>Azioni</th>
+            <th>Manutenzione</th>
         </tr>
     </thead>
     <tbody>
@@ -197,20 +138,21 @@ $inserzioni = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <td><?= htmlspecialchars($i['modello']) ?></td>
                 <td><?= htmlspecialchars($i['anno']) ?></td>
                 <td><?= htmlspecialchars($i['carburante']) ?></td>
-                <td><?= htmlspecialchars($i['potenza']) ?></td>
+                <td><?= number_format($i['potenza'], 2) ?></td>
                 <td><?= number_format($rapporto, 2) ?> kW/ton</td>
                 <td><?= $neopatentati_ok ? "Sì" : "No" ?></td>
                 <td><?= number_format($i['importo'], 2) ?> €</td>
                 <td><?= htmlspecialchars($i['descrizione']) ?></td>
                 <td><a href="rent_vehicle.php?inserzione_id=<?= urlencode($i['inserzione_id']) ?>">Noleggia</a></td>
+                <td><a href="manutenzione.php?targa=<?= urlencode($i['targa']) ?>">Manutenzione</a></td>
             </tr>
             <?php endforeach; ?>
         <?php else: ?>
-            <tr><td colspan="10">Nessuna inserzione trovata.</td></tr>
+            <tr><td colspan="11">Nessuna inserzione trovata.</td></tr> 
         <?php endif; ?>
     </tbody>
 </table>
 
-<p><a href="../index.php">&larr; Torna alla Home</a></p>
+<a href="../index.php">&larr; Torna alla pagina dettaglio</a>
 </body>
 </html>

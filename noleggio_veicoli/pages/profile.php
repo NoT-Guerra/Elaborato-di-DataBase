@@ -6,7 +6,7 @@ check_logged_in();
 $utente_id = $_SESSION['user_id'];
 
 // Carica dati utente
-$stmt = $pdo->prepare("SELECT * FROM utente WHERE id_utente = ?");
+$stmt = $pdo->prepare("SELECT * FROM UTENTE WHERE id_utente = ?");
 $stmt->execute([$utente_id]);
 $utente = $stmt->fetch();
 
@@ -15,13 +15,8 @@ if (!$utente) {
     exit;
 }
 
-// Carica indirizzi spedizione usando JOIN con tabella possiede
-$stmt2 = $pdo->prepare("
-    SELECT i.*
-    FROM indirizzo i
-    JOIN possiede p ON i.id_indirizzo = p.id_indirizzo
-    WHERE p.id_utente = ?
-");
+// Carica indirizzi spedizione associati all'utente
+$stmt2 = $pdo->prepare("SELECT * FROM INDIRIZZO WHERE id_utente = ?");
 $stmt2->execute([$utente_id]);
 $indirizzi = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -99,10 +94,11 @@ $indirizzi = $stmt2->fetchAll(PDO::FETCH_ASSOC);
             <?php foreach ($indirizzi as $indirizzo): ?>
                 <li>
                     <?= htmlspecialchars(
-                        ($indirizzo['indirizzo'] ?? $indirizzo['via'] ?? 'Indirizzo non disponibile') . ', ' .
-                        ($indirizzo['citta'] ?? $indirizzo['comune'] ?? 'Città non disponibile') . ', ' .
+                        ($indirizzo['via'] ?? 'Indirizzo non disponibile') . ', ' .
+                        ($indirizzo['citta'] ?? 'Città non disponibile') . ', ' .
                         ($indirizzo['cap'] ?? 'CAP non disponibile') . ', ' .
-                        ($indirizzo['provincia'] ?? 'Provincia non disponibile')
+                        ($indirizzo['provincia'] ?? 'Provincia non disponibile') . ', ' .
+                        ($indirizzo['nazione'] ?? 'Nazione non disponibile')
                     ) ?>
                 </li>
             <?php endforeach; ?>

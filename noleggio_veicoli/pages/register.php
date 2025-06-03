@@ -4,15 +4,13 @@ require_once '../includes/db.php';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $nome = trim($_POST['nome']);
-    $cognome = trim($_POST['cognome']);
-    $email = trim($_POST['email']);
-    $password = $_POST['password'];
+    $nome = trim($_POST['nome'] ?? '');
+    $cognome = trim($_POST['cognome'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
 
-    // Checkbox "aggiungi_indirizzo"
     $aggiungi_indirizzo = isset($_POST['aggiungi_indirizzo']);
 
-    // Campi indirizzo opzionali (prendiamo solo se checkbox selezionata)
     $via = $aggiungi_indirizzo ? trim($_POST['via'] ?? '') : '';
     $cap = $aggiungi_indirizzo ? trim($_POST['cap'] ?? '') : '';
     $citta = $aggiungi_indirizzo ? trim($_POST['citta'] ?? '') : '';
@@ -20,13 +18,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nazione = $aggiungi_indirizzo ? trim($_POST['nazione'] ?? '') : '';
 
     // Validazione base
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    if (!$nome || !$cognome || !$email || !$password) {
+        $error = "Compila tutti i campi obbligatori.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Email non valida.";
     } elseif (strlen($password) < 6) {
         $error = "La password deve contenere almeno 6 caratteri.";
     } else {
-        // Controllo se email esiste già
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM utente WHERE email = ?");
+        // Controlla email duplicata
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM UTENTE WHERE email = ?");
         $stmt->execute([$email]);
         if ($stmt->fetchColumn() > 0) {
             $error = "Email già registrata.";
@@ -37,17 +37,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $pdo->beginTransaction();
 
-            if ($aggiungi_indirizzo && ($via || $cap || $citta || $provincia || $nazione)) {
-                $stmtInd = $pdo->prepare("INSERT INTO indirizzo (via, cap, città, provincia, nazione) VALUES (?, ?, ?, ?, ?)");
-                $stmtInd->execute([$via, $cap, $citta, $provincia, $nazione]);
-                $id_indirizzo = $pdo->lastInsertId();
-            } else {
-                $id_indirizzo = null;
+            // Inserisci utente
+            $password_hash = password_hash($password, PASSWORD_DEFAULT);
+            $stmtUt = $pdo->prepare("INSERT INTO UTENTE (nome, cognome, email, password, stato_account) VALUES (?, ?, ?, ?, 1)");
+            $stmtUt->execute([$nome, $cognome, $email, $password_hash]);
+
+            // Ottieni id utente appena inserito
+            $id_utente = $pdo->lastInsertId();
+
+            // Inserisci indirizzo se richiesto
+            if ($aggiungi_indirizzo && $via && $cap && $citta && $provincia && $nazione) {
+                $stmtInd = $pdo->prepare("INSERT INTO INDIRIZZO (via, cap, citta, provincia, nazione, id_utente) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmtInd->execute([$via, $cap, $citta, $provincia, $nazione, $id_utente]);
             }
 
-            $password_hash = password_hash($password, PASSWORD_DEFAULT);
-            $stmtUt = $pdo->prepare("INSERT INTO utente (nome, cognome, email, password, stato_account, id_indirizzo) VALUES (?, ?, ?, ?, 1, ?)");
-            $stmtUt->execute([$nome, $cognome, $email, $password_hash, $id_indirizzo]);
+            // Inserisci record CLIENTE (ipotizzando che si registri sempre come cliente)
+            $stmtCl = $pdo->prepare("INSERT INTO CLIENTE (id_utente) VALUES (?)");
+            $stmtCl->execute([$id_utente]);
 
             $pdo->commit();
 
@@ -75,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         input { width: 100%; padding: 8px; margin-top: 5px; }
         fieldset { margin-top: 20px; padding: 10px; }
         legend { font-weight: bold; }
-        button { padding: 10px 20px; margin-top: 10px; }
+        button { padding: 10px 20px; margin-top: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -86,13 +92,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <form method="POST">
         <label>Nome:
-            <input type="text" name="nome" required>
+            <input type="text" name="nome" value="<?= htmlspecialchars($_POST['nome'] ?? '') ?>" required>
         </label>
         <label>Cognome:
-            <input type="text" name="cognome" required>
+            <input type="text" name="cognome" value="<?= htmlspecialchars($_POST['cognome'] ?? '') ?>" required>
         </label>
         <label>Email:
-            <input type="email" name="email" required>
+            <input type="email" name="email" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" required>
         </label>
         <label>Password:
             <input type="password" name="password" required>
@@ -138,9 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     checkbox.addEventListener('change', toggleIndirizzo);
-    window.addEventListener('load', () => {
-        toggleIndirizzo();
-    });
+    window.addEventListener('load', toggleIndirizzo);
 </script>
 
 </body>

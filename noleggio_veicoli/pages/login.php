@@ -5,16 +5,15 @@ session_start();
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email_input = trim($_POST['email']);
-    $password_input = trim($_POST['password']);
+    $email_input = trim($_POST['email'] ?? '');
+    $password_input = trim($_POST['password'] ?? '');
 
-    // Controllo campi non vuoti
-    if (empty($email_input) || empty($password_input)) {
+    if ($email_input === '' || $password_input === '') {
         $error = "Tutti i campi sono obbligatori.";
     } elseif (!filter_var($email_input, FILTER_VALIDATE_EMAIL)) {
         $error = "Email non valida.";
     } else {
-        $stmt = $pdo->prepare("SELECT * FROM utente WHERE email = ?");
+        $stmt = $pdo->prepare("SELECT * FROM UTENTE WHERE email = ?");
         $stmt->execute([$email_input]);
         $user = $stmt->fetch();
 
@@ -46,12 +45,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         form { max-width: 300px; margin: 0 auto; }
         label { display: block; margin-bottom: 10px; }
         input { width: 100%; padding: 8px; margin-top: 5px; }
-        button { padding: 10px 20px; margin-top: 10px; }
+        button { padding: 10px 20px; margin-top: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
     <h1>Login</h1>
-    
+
     <?php if ($error): ?>
         <p class='error'><?= htmlspecialchars($error) ?></p>
     <?php endif; ?>
