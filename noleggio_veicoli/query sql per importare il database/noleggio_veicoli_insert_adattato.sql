@@ -70,12 +70,12 @@ INSERT INTO ACCESSORI_EXTRA (id_accessorio, prezzo) VALUES
 
 -- 12. PERIODO
 INSERT INTO PERIODO (dataInizioPeriodo, dataFinePeriodo) VALUES
-('01-01', '02-28'),
-('03-01', '04-30'),
-('05-01', '06-30'),
-('07-01', '08-31'),
-('09-01', '10-31'),
-('11-01', '12-31');
+('2025-01-01', '2025-02-28'),
+('2025-03-01', '2025-04-30'),
+('2025-05-01', '2025-06-30'),
+('2025-07-01', '2025-08-31'),
+('2025-09-01', '2025-10-31'),
+('2025-11-01', '2025-12-31');
 
 INSERT INTO TARIFFARIO (id_periodo, sconto) VALUES
 (1, 0.00),

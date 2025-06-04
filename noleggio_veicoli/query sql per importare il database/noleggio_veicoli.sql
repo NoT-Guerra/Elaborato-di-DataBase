@@ -1,6 +1,5 @@
-create database noleggio_veicoli;
-
-use noleggio_veicoli;
+CREATE DATABASE noleggio_veicoli;
+USE noleggio_veicoli;
 
 CREATE TABLE UTENTE (
     id_utente INT PRIMARY KEY AUTO_INCREMENT,
@@ -13,12 +12,12 @@ CREATE TABLE UTENTE (
 
 CREATE TABLE CLIENTE (
     id_utente INT PRIMARY KEY,
-    FOREIGN KEY (id_utente) REFERENCES UTENTE(id_utente)
+    FOREIGN KEY (id_utente) REFERENCES UTENTE(id_utente) ON DELETE CASCADE
 );
 
 CREATE TABLE PROPRIETARIO (
     id_utente INT PRIMARY KEY,
-    FOREIGN KEY (id_utente) REFERENCES UTENTE(id_utente)
+    FOREIGN KEY (id_utente) REFERENCES UTENTE(id_utente) ON DELETE CASCADE
 );
 
 CREATE TABLE INDIRIZZO (
@@ -29,7 +28,7 @@ CREATE TABLE INDIRIZZO (
     provincia VARCHAR(50),
     nazione VARCHAR(50),
     id_utente INT,
-    FOREIGN KEY (id_utente) REFERENCES UTENTE(id_utente)
+    FOREIGN KEY (id_utente) REFERENCES UTENTE(id_utente) ON DELETE CASCADE
 );
 
 CREATE TABLE LOCALITA (
@@ -45,8 +44,8 @@ CREATE TABLE INSERZIONE (
     prezzo_giornaliero DECIMAL(10,2) NOT NULL,
     id_localita INT NOT NULL,
     id_utente INT NOT NULL,
-    FOREIGN KEY (id_localita) REFERENCES LOCALITA(id_localita),
-    FOREIGN KEY (id_utente) REFERENCES UTENTE(id_utente)
+    FOREIGN KEY (id_localita) REFERENCES LOCALITA(id_localita) ON DELETE CASCADE,
+    FOREIGN KEY (id_utente) REFERENCES UTENTE(id_utente) ON DELETE CASCADE
 );
 
 CREATE TABLE CATEGORIA_VEICOLO (
@@ -64,8 +63,8 @@ CREATE TABLE VEICOLO (
     potenza DECIMAL(10,2),
     id_inserzione INT,
     id_categoria INT,
-    FOREIGN KEY (id_inserzione) REFERENCES INSERZIONE(id_inserzione),
-    FOREIGN KEY (id_categoria) REFERENCES CATEGORIA_VEICOLO(id_categoria)
+    FOREIGN KEY (id_inserzione) REFERENCES INSERZIONE(id_inserzione) ON DELETE CASCADE,
+    FOREIGN KEY (id_categoria) REFERENCES CATEGORIA_VEICOLO(id_categoria) ON DELETE SET NULL
 );
 
 CREATE TABLE ACCESSORIO (
@@ -73,31 +72,31 @@ CREATE TABLE ACCESSORIO (
     descrizione TEXT,
     nome VARCHAR(50),
     id_inserzione INT,
-    FOREIGN KEY (id_inserzione) REFERENCES INSERZIONE(id_inserzione)
+    FOREIGN KEY (id_inserzione) REFERENCES INSERZIONE(id_inserzione) ON DELETE CASCADE
 );
 
 CREATE TABLE ACCESSORI_INCLUSI (
     id_accessorio INT PRIMARY KEY,
-    FOREIGN KEY (id_accessorio) REFERENCES ACCESSORIO(id_accessorio)
+    FOREIGN KEY (id_accessorio) REFERENCES ACCESSORIO(id_accessorio) ON DELETE CASCADE
 );
 
 CREATE TABLE ACCESSORI_EXTRA (
     id_accessorio INT PRIMARY KEY,
     prezzo DECIMAL(10,2),
-    FOREIGN KEY (id_accessorio) REFERENCES ACCESSORIO(id_accessorio)
+    FOREIGN KEY (id_accessorio) REFERENCES ACCESSORIO(id_accessorio) ON DELETE CASCADE
 );
 
 CREATE TABLE PERIODO (
     id_periodo INT PRIMARY KEY AUTO_INCREMENT,
-    dataInizioPeriodo VARCHAR(5) NOT NULL,
-    dataFinePeriodo VARCHAR(5) NOT NULL
+    dataInizioPeriodo DATE NOT NULL,
+    dataFinePeriodo DATE NOT NULL
 );
 
 CREATE TABLE TARIFFARIO (
     id_tariffario INT PRIMARY KEY AUTO_INCREMENT,
     id_periodo INT NOT NULL,
     sconto DECIMAL(5,2) NOT NULL DEFAULT 0.00,
-    FOREIGN KEY (id_periodo) REFERENCES PERIODO(id_periodo)
+    FOREIGN KEY (id_periodo) REFERENCES PERIODO(id_periodo) ON DELETE CASCADE
 );
 
 CREATE TABLE LUOGO (
@@ -115,10 +114,10 @@ CREATE TABLE NOLEGGIO (
     id_utente INT NOT NULL,
     id_luogo INT NOT NULL,
     targa VARCHAR(20) NOT NULL,
-    FOREIGN KEY (id_periodo) REFERENCES PERIODO(id_periodo),
-    FOREIGN KEY (id_utente) REFERENCES UTENTE(id_utente),
-    FOREIGN KEY (id_luogo) REFERENCES LUOGO(id_luogo),
-    FOREIGN KEY (targa) REFERENCES VEICOLO(targa)
+    FOREIGN KEY (id_periodo) REFERENCES PERIODO(id_periodo) ON DELETE CASCADE,
+    FOREIGN KEY (id_utente) REFERENCES UTENTE(id_utente) ON DELETE CASCADE,
+    FOREIGN KEY (id_luogo) REFERENCES LUOGO(id_luogo) ON DELETE CASCADE,
+    FOREIGN KEY (targa) REFERENCES VEICOLO(targa) ON DELETE CASCADE
 );
 
 CREATE TABLE PAGAMENTO (
@@ -128,7 +127,7 @@ CREATE TABLE PAGAMENTO (
     importo DECIMAL(10,2) NOT NULL,
     metodo_pagamento VARCHAR(50) NOT NULL,
     stato_pagamento VARCHAR(50) NOT NULL,
-    FOREIGN KEY (id_noleggio) REFERENCES NOLEGGIO(id_noleggio)
+    FOREIGN KEY (id_noleggio) REFERENCES NOLEGGIO(id_noleggio) ON DELETE CASCADE
 );
 
 CREATE TABLE RECENSIONE (
@@ -137,7 +136,7 @@ CREATE TABLE RECENSIONE (
     commento TEXT,
     data_recensione DATE NOT NULL,
     id_noleggio INT NOT NULL,
-    FOREIGN KEY (id_noleggio) REFERENCES NOLEGGIO(id_noleggio)
+    FOREIGN KEY (id_noleggio) REFERENCES NOLEGGIO(id_noleggio) ON DELETE CASCADE
 );
 
 CREATE TABLE SINISTRO (
@@ -146,7 +145,7 @@ CREATE TABLE SINISTRO (
     descrizione TEXT,
     costo DECIMAL(10,2),
     id_noleggio INT NOT NULL,
-    FOREIGN KEY (id_noleggio) REFERENCES NOLEGGIO(id_noleggio)
+    FOREIGN KEY (id_noleggio) REFERENCES NOLEGGIO(id_noleggio) ON DELETE CASCADE
 );
 
 CREATE TABLE MANUTENZIONE (
@@ -156,5 +155,5 @@ CREATE TABLE MANUTENZIONE (
     costo DECIMAL(10,2),
     descrizione TEXT,
     targa VARCHAR(20),
-    FOREIGN KEY (targa) REFERENCES VEICOLO(targa)
+    FOREIGN KEY (targa) REFERENCES VEICOLO(targa) ON DELETE CASCADE
 );
